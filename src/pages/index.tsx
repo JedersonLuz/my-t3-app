@@ -8,11 +8,18 @@ import type { RouterOutputs } from "~/utils/api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
+import { LoadingPage } from "~/components/loading";
 
 dayjs.extend(relativeTime);
 
 const Home: NextPage = () => {
-  const { data } = api.posts.getAll.useQuery();
+  const { data: sessionData, status } = useSession();
+
+  // Start fetching posts asap
+  api.posts.getAll.useQuery();
+
+  // Return empty div if user is not loaded yet
+  if (status === "loading") return <div />;
 
   return (
     <>
@@ -24,13 +31,17 @@ const Home: NextPage = () => {
       <main className="flex h-screen justify-center">
         <div className="h-full w-full border-x border-slate-200 md:max-w-2xl">
           <div className="border-b border-slate-400 p-4">
-            <CreatePostWizard />
+            {!sessionData && (
+              <button
+                className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
+                onClick={() => void signIn()}
+              >
+                Sign in
+              </button>
+            )}
+            {sessionData && <CreatePostWizard />}
           </div>
-          <div className="flex flex-col">
-            {data?.map((fullPost) => (
-              <PostView {...fullPost} key={fullPost.post.id} />
-            ))}
-          </div>
+          <Feed />
         </div>
       </main>
     </>
@@ -39,19 +50,26 @@ const Home: NextPage = () => {
 
 export default Home;
 
+const Feed = () => {
+  const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
+
+  if (postsLoading) return <LoadingPage />;
+
+  if (!data) return <div>Something went wrong</div>;
+
+  return (
+    <div className="flex flex-col">
+      {data?.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))}
+    </div>
+  );
+};
+
 const CreatePostWizard: React.FC = () => {
   const { data: sessionData } = useSession();
 
-  if (!sessionData) {
-    return (
-      <button
-        className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
-        onClick={() => void signIn()}
-      >
-        Sign in
-      </button>
-    );
-  }
+  if (!sessionData) return null;
 
   return (
     <div className="flex w-full gap-3">
@@ -92,33 +110,6 @@ const PostView = (props: PostWithAuthor) => {
         </div>
         <span>{post.content}</span>
       </div>
-    </div>
-  );
-};
-
-const AuthShowcase: React.FC = () => {
-  const { data: sessionData } = useSession();
-
-  return (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <div className="flex">
-        {sessionData && (
-          <img
-            src={sessionData.user.image || undefined}
-            alt="Profile image"
-            className="h-16 w-16 rounded-full"
-          />
-        )}
-      </div>
-      <p className="text-center text-2xl text-white">
-        {sessionData && <span>Logged in as {sessionData.user?.name}</span>}
-      </p>
-      <button
-        className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
-        onClick={sessionData ? () => void signOut() : () => void signIn()}
-      >
-        {sessionData ? "Sign out" : "Sign in"}
-      </button>
     </div>
   );
 };
