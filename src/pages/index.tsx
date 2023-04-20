@@ -9,6 +9,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
 import { LoadingPage } from "~/components/loading";
+import { useState } from "react";
 
 dayjs.extend(relativeTime);
 
@@ -59,15 +60,26 @@ const Feed = () => {
 
   return (
     <div className="flex flex-col">
-      {data?.map((fullPost) => (
+      {data.map((fullPost) => (
         <PostView {...fullPost} key={fullPost.post.id} />
       ))}
     </div>
   );
 };
 
-const CreatePostWizard: React.FC = () => {
+const CreatePostWizard = () => {
   const { data: sessionData } = useSession();
+
+  const [content, setContent] = useState<string>("");
+
+  const ctx = api.useContext();
+
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      setContent("");
+      void ctx.posts.getAll.invalidate();
+    },
+  });
 
   if (!sessionData) return null;
 
@@ -83,7 +95,11 @@ const CreatePostWizard: React.FC = () => {
       <input
         placeholder="Type some emojis!"
         className="grow bg-transparent outline-none"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        disabled={isPosting}
       />
+      <button onClick={() => mutate({ content })}>Post</button>
     </div>
   );
 };
