@@ -11,6 +11,7 @@ import { LoadingPage, LoadingSpinner } from "~/components/loading";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { PageLayout } from "~/components/layout";
 
 dayjs.extend(relativeTime);
 
@@ -25,43 +26,25 @@ const Home: NextPage = () => {
 
   return (
     <>
-      <main className="flex h-screen justify-center">
-        <div className="h-full w-full border-x border-slate-200 md:max-w-2xl">
-          <div className="border-b border-slate-400 p-4">
-            {!sessionData && (
-              <button
-                className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
-                onClick={() => void signIn()}
-              >
-                Sign in
-              </button>
-            )}
-            {sessionData && <CreatePostWizard />}
-          </div>
-          <Feed />
+      <PageLayout>
+        <div className="border-b border-slate-400 p-4">
+          {!sessionData && (
+            <button
+              className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
+              onClick={() => void signIn()}
+            >
+              Sign in
+            </button>
+          )}
+          {sessionData && <CreatePostWizard />}
         </div>
-      </main>
+        <Feed />
+      </PageLayout>
     </>
   );
 };
 
 export default Home;
-
-const Feed = () => {
-  const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
-
-  if (postsLoading) return <LoadingPage />;
-
-  if (!data) return <div>Something went wrong</div>;
-
-  return (
-    <div className="flex flex-col">
-      {data.map((fullPost) => (
-        <PostView {...fullPost} key={fullPost.post.id} />
-      ))}
-    </div>
-  );
-};
 
 const CreatePostWizard = () => {
   const { data: sessionData } = useSession();
@@ -90,9 +73,9 @@ const CreatePostWizard = () => {
   return (
     <div className="flex w-full gap-3">
       <Image
-        src={sessionData.user.image || ""}
+        src={sessionData.user.image ?? ""}
         alt="Profile image"
-        className="h-14 w-14 rounded-full"
+        className="rounded-full"
         width={56}
         height={56}
       />
@@ -125,6 +108,22 @@ const CreatePostWizard = () => {
   );
 };
 
+const Feed = () => {
+  const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
+
+  if (postsLoading) return <LoadingPage />;
+
+  if (!data) return <div>Something went wrong</div>;
+
+  return (
+    <div className="flex flex-col">
+      {data.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))}
+    </div>
+  );
+};
+
 type PostWithAuthor = RouterOutputs["posts"]["getAll"][number];
 const PostView = (props: PostWithAuthor) => {
   const { post, author } = props;
@@ -132,22 +131,22 @@ const PostView = (props: PostWithAuthor) => {
   return (
     <div key={post.id} className="flex gap-3 border-b border-slate-400 p-4">
       <Image
-        src={author.image || ""}
-        alt={`${author.name || ""}'s profile image`}
-        className="h-14 w-14 rounded-full"
+        src={author.image ?? ""}
+        alt={`${author.name ?? ""}'s profile image`}
+        className="rounded-full"
         width={56}
         height={56}
       />
       <div className="flex flex-col">
         <div className="flex gap-2 text-slate-300">
-          <Link href={`/@${author.name}`}>
-            <span>{`@${author.name || ""}`}</span>
-          </Link>
-          <Link href={`/post/${post.id}`}>
-            <span className="font-thin">
-              {`· ${dayjs(post.createdAt).fromNow()}`}
-            </span>
-          </Link>
+          {/* <Link href={`/@${author.name ?? ""}`}> */}
+          <span>{`@${author.name ?? ""}`}</span>
+          {/* </Link> */}
+          {/* <Link href={`/post/${post.id}`}> */}
+          <span className="font-thin">
+            {`· ${dayjs(post.createdAt).fromNow()}`}
+          </span>
+          {/* </Link> */}
         </div>
         <span className="text-2xl">{post.content}</span>
       </div>
