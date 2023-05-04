@@ -1,4 +1,4 @@
-import { GetStaticProps, type NextPage } from "next";
+import type { GetStaticProps, NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import { api } from "~/utils/api";
@@ -19,13 +19,13 @@ const ProfilePage: NextPage<{ name: string }> = ({ name }) => {
         <div className="relative h-48 bg-slate-600">
           <Image
             src={data.image ?? ""}
-            alt={`${data.name}'s profile image`}
+            alt={data?.name ? `${data?.name}'s profile image` : ""}
             className="border-3 absolute bottom-0 left-0 -mb-[64px] ml-6 rounded-full border-black"
             width={128}
             height={128}
           />
         </div>
-        <div>{`@${data?.name}`}</div>
+        <div>{data?.name ? `@${data?.name}` : ""}</div>
       </PageLayout>
     </>
   );
